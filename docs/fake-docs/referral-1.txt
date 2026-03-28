@@ -1,0 +1,22 @@
+Patient Name: Marcus Taldren
+Date of Birth: 02/11/1990
+Address: 47 Cloudberry Crescent, Wattlewood VIC 3099
+Medicare Number: 8123 44567 3
+
+Date: 29/03/2026
+
+Referring Doctor:
+Dr. Isla Quenton
+Greenvale Family Practice
+118 Fernleigh Road, Wattlewood VIC 3099
+Ph: (03) 9123 7985
+Provider No: 778921H
+
+Referral To:
+Dr. Rowan Kee
+Consultant Gastroenterologist
+Southern Cross Digestive Clinic
+4th Floor, 10 Porphyry Avenue, Eastvale VIC 3084
+
+Reason for Referral:
+Ongoing abdominal discomfort, nausea, and bloating over the past six months. Episodes occur unpredictably and have become more frequent.
