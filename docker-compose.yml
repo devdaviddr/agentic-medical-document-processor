@@ -1,0 +1,35 @@
+version: '3.8'
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - '5672:5672'
+      - '15672:15672'
+
+  document-ingestion-service:
+    build:
+      context: ./packages/document-ingestion-service
+      dockerfile: Dockerfile
+    ports:
+      - '4000:4000'
+    environment:
+      - PORT=4000
+      - RABBITMQ_URL=amqp://rabbitmq
+    volumes:
+      - ./packages/document-ingestion-service/uploads:/app/uploads
+    depends_on:
+      - rabbitmq
+
+  document-processor-service:
+    build:
+      context: ./packages/document-processor-service
+      dockerfile: Dockerfile
+    depends_on:
+      - rabbitmq
+    environment:
+      - RABBITMQ_URL=amqp://rabbitmq
+      - PROCESS_SIMULATE_DELAY_MS=300
+
+networks:
+  default:
+    driver: bridge
