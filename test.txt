@@ -1,3 +1,0 @@
-curl -X POST -F file=@test.pdf http://localhost:4000/api/documents/upload
-curl http://localhost:4000/api/documents/<jobId>/status
-curl http://localhost:4000/health

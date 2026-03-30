@@ -143,6 +143,32 @@ curl -F "file=@sample.pdf" http://localhost:4000/api/documents/upload
 - `Dockerfile.backend`, `Dockerfile.frontend`, `docker-compose.yml`
 - Local compose includes app, redis, optional postgres/mongo
 
+### Docker Compose run + test URLs
+
+1. Start services:
+
+```bash
+docker compose up --build
+```
+
+2. Upload a file (replace with your local test file):
+
+```bash
+curl -X POST -F file=@test.pdf http://localhost:4000/api/documents/upload
+```
+
+3. Check job status (replace `<jobId>` with response ID):
+
+```bash
+curl http://localhost:4000/api/documents/<jobId>/status
+```
+
+4. Health check:
+
+```bash
+curl http://localhost:4000/health
+```
+
 ## ☁️ Cloudflare
 
 - Use Cloudflare Workers or Pages
