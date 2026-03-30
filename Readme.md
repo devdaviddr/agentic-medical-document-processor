@@ -9,7 +9,8 @@ A robust solution for ingesting medical PDFs, analyzing content with GitHub Copi
 Tech stack:
 - React + TypeScript (frontend)
 - Express + TypeScript (backend)
-- BullMQ (queue and background workers)
+- RabbitMQ (message queue, `document-processing` queue)
+- PostgreSQL (job state store) via `pg`
 - GitHub Copilot SDK (AI-driven instruction / action composition)
 - Docker (container builds)
 - Cloudflare (edge, CDN, routing, security)
@@ -20,40 +21,37 @@ Tech stack:
 - OCR and structured extraction from medical PDFs
 - Document classification (e.g., lab report, discharge summary, clinical note)
 - Action inference using Copilot SDK: summarize, triage risk, generate follow-up items, route alerts
-- BullMQ job queue for resiliency/scaling
+- RabbitMQ job queue for resiliency/scaling (replace prior BullMQ approach)
 - Worker process for detached, reliable processing
 - API for status, result retrieval, and job management
 - Dashboard with job and results view
 
 ## 🏗️ Architecture
 
-1. Client uploads PDF
-2. Backend stores artifact and enqueues analysis job to BullMQ
-3. Worker dequeues job, extracts text, calls Copilot SDK logic, stores outputs
-4. Results served through API and frontend UI
-5. Optional notifications / audit trail / downstream integration
+1. Client uploads PDF to `document-ingestion-service` (`/api/documents/upload`)
+2. Ingestion service stores file and writes job row to PostgreSQL `jobs` table (`status=queued`)
+3. Ingestion service publishes RabbitMQ message to `document-processing` queue
+4. `document-processor-service` consumer dequeues job, updates `status=processing`, runs OCR/Copilot logic, updates PostgreSQL `status=processed` + results
+5. Client polls `/api/documents/:jobId/status` and receives final output
+6. Optional notifications / audit trail / downstream integration
 
 ### Architecture Diagram (ASCII)
 
 ```
-+----------+     +---------+     +---------+     +----------+
-| Browser  | --> | Frontend| --> | Backend | --> | BullMQ   |
-| (React)  |     | (React) |     | (Express|     | (Queue)  |
-+----------+     +---------+     +---------+     +----------+
-                                      |             |
-                                      v             v
-                                  +---------+   +--------------+
-                                  | Storage |   | Worker      |
-                                  | (S3/R2) |   | (Node +     |
-                                  +---------+   |  Copilot SDK)|
-                                                 +--------------+
-                                                      |
-                                                      v
-                                                +--------------+
-                                                | Database     |
-                                                | (Postgres/   |
-                                                |  MongoDB)    |
-                                                +--------------+
++----------+     +---------+     +---------------------------+     +----------------------+
+| Browser  | --> | Frontend| --> | document-ingestion-service | --> | RabbitMQ queue      |
+| (React)  |     | (React) |     | (Express)                 |     | document-processing |
++----------+     +---------+     +---------------------------+     +----------------------+
+                                                      |                      |
+                                                      |                      v
+                                                      |             +----------------------+ 
+                                                      |             | document-processor-  |
+                                                      |             | service             |
+                                                      |             +----------------------+ 
+                                                      v                      |
+                                                +----------------------+   |
+                                                | PostgreSQL jobs table| <---
+                                                +----------------------+
 ```
 
 ## ⚙️ Getting Started

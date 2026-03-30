@@ -7,16 +7,16 @@ the processing service (`document-processor-service`), and the RabbitMQ queue fl
 ## Components
 
 - `rabbitmq`: RabbitMQ message broker (management UI on 15672, AMQP on 5672)
-- `document-ingestion-service`: Express API that accepts PDF uploads, persists job metadata in SQLite, and enqueues jobs in RabbitMQ.
+- `document-ingestion-service`: Express API that accepts PDF uploads, persists job metadata in PostgreSQL, and enqueues jobs in RabbitMQ.
   - `/api/documents/upload` (POST): accepts `multipart/form-data` with `file`.
-  - `/api/documents/:jobId/status` (GET): returns status from SQLite jobs table.
-- `document-processor-service`: worker that consumes RabbitMQ queue, updates SQLite status, and writes processing results.
+  - `/api/documents/:jobId/status` (GET): returns status from PostgreSQL jobs table.
+- `document-processor-service`: worker that consumes RabbitMQ queue, updates PostgreSQL status, and writes processing results.
 
 ## Environment
 
 Common:
 - `RABBITMQ_URL=amqp://rabbitmq`
-- `SQLITE_DB_PATH=/data/jobs.db` (shared volume for job status)
+- `POSTGRES_URL=postgres://postgres:postgres@postgres:5432/jobs` (shared DB connection)
 
 Ingestion:
 - `PORT=4000`
@@ -31,13 +31,13 @@ Processing:
 | Client / UI       |  ---------->  | ingestion-service     |  ---------->  | RabbitMQ queue       |
 | (upload PDF)      |               | (Express)             |               | document-processing  |
 +-------------------+               +-----------------------+               +----------------------+
-         |                                    |                                    |
-         |                                    | 1. store job in SQLite jobs table  |
-         |                                    |    status=queued                   |
-         |                                    | 2. publish job message             |
-         |                                    |    {jobId, filePath, ...}          |
-         |                                    |                                    |
-         v                                    v                                    v
+         |                                    |                                        |
+         |                                    | 1. store job in PostgreSQL jobs table  |
+         |                                    |    status=queued                       |
+         |                                    | 2. publish job message                 |
+         |                                    |    {jobId, filePath, ...}              |
+         |                                    |                                        |
+         v                                    v                                        v
 +-------------------+               +-----------------------+                  +----------------------+
 | status poll       | <-----------> | ingestion-service     | <------------->  | consumer(s)          |
 | /api/documents/...|               | /api/documents/:id    |                  | document-processor   |
@@ -49,8 +49,8 @@ Processing:
                                                                               | ack
                                                                               v
                                                                       +---------------------------+
-                                                                      | SQLite jobs table         |
-                                                                      | (shared / /data/jobs.db)  |
+                                                                      | PostgreSQL jobs table     |
+                                                                      | (shared via `POSTGRES_URL`)
                                                                       +---------------------------+
 ```
 
@@ -58,7 +58,7 @@ Processing:
 
 1. Client POSTs PDF to `/api/documents/upload` in `document-ingestion-service`.
 2. Service stores file in `packages/document-ingestion-service/uploads` via `multer`.
-3. Service creates a job record in SQLite `jobs` table with status `queued`.
+3. Service creates a job record in PostgreSQL `jobs` table with status `queued`.
 4. Service publishes RabbitMQ message to queue `document-processing`.
 5. `document-processor-service` bootstraps and connects to RabbitMQ.
 6. Worker consumes one message at a time (`channel.consume`).
