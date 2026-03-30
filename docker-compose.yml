@@ -1,0 +1,69 @@
+version: '3.8'
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - '5672:5672'
+      - '15672:15672'
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  document-ingestion-service:
+    build:
+      context: ./packages/document-ingestion-service
+      dockerfile: Dockerfile
+    ports:
+      - '4000:4000'
+    environment:
+      - PORT=4000
+      - RABBITMQ_URL=amqp://rabbitmq
+      - SQLITE_DB_PATH=/data/jobs.db
+    volumes:
+      - ./packages/document-ingestion-service/uploads:/app/uploads
+      - ./data:/data
+    depends_on:
+      - rabbitmq
+
+  document-processor-service:
+    build:
+      context: ./packages/document-processor-service
+      dockerfile: Dockerfile
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    environment:
+      - RABBITMQ_URL=amqp://rabbitmq
+      - POSTGRES_URL=postgres://postgres:postgres@postgres:5432/jobs
+      - PROCESS_SIMULATE_DELAY_MS=300
+    volumes:
+      - ./data:/data
+    restart: on-failure
+    deploy:
+      restart_policy:
+        condition: on-failure
+
+  postgres:
+    image: postgres:15
+    ports:
+      - '5432:5432'
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=jobs
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
+
+networks:
+  default:
+    driver: bridge
