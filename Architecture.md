@@ -10,7 +10,8 @@ the processing service (`document-processor-service`), and the RabbitMQ queue fl
 - `document-ingestion-service`: Express API that accepts PDF uploads, persists job metadata in PostgreSQL, and enqueues jobs in RabbitMQ.
   - `/api/documents/upload` (POST): accepts `multipart/form-data` with `file`.
   - `/api/documents/:jobId/status` (GET): returns status from PostgreSQL jobs table.
-- `document-processor-service`: worker that consumes RabbitMQ queue, updates PostgreSQL status, and writes processing results.
+  - `/health` (GET): basic service health check.
+- `document-processor-service`: worker that consumes RabbitMQ queue, updates PostgreSQL status, and writes processing results (with `prefetch(1)` for safe concurrency).
 
 ## Environment
 

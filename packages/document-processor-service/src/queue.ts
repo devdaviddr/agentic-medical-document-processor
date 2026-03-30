@@ -14,6 +14,7 @@ export async function initRabbit() {
   if (!channel) {
     channel = await connection.createChannel();
     await channel.assertQueue(QUEUE_NAME, { durable: true });
+    await channel.prefetch(1);
   }
 
   return { connection, channel, queue: QUEUE_NAME };

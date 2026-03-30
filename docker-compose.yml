@@ -23,12 +23,13 @@ services:
     environment:
       - PORT=4000
       - RABBITMQ_URL=amqp://rabbitmq
-      - SQLITE_DB_PATH=/data/jobs.db
+      - POSTGRES_URL=postgres://postgres:postgres@postgres:5432/jobs
     volumes:
       - ./packages/document-ingestion-service/uploads:/app/uploads
       - ./data:/data
     depends_on:
       - rabbitmq
+      - postgres
 
   document-processor-service:
     build:
@@ -60,6 +61,11 @@ services:
       - POSTGRES_DB=jobs
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
 volumes:
   postgres_data:

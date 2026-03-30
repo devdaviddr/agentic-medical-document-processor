@@ -52,7 +52,7 @@ export async function createJob(job: {
     INSERT INTO jobs (jobId, status, filePath, originalName, mimetype, size, createdAt, updatedAt)
     VALUES ($1, 'queued', $2, $3, $4, $5, $6, $6)
     ON CONFLICT (jobId) DO UPDATE
-      SET status = 'queued', filePath = EXCLUDED.filePath, originalName = EXCLUDED.originalName,
+      SET filePath = EXCLUDED.filePath, originalName = EXCLUDED.originalName,
           mimetype = EXCLUDED.mimetype, size = EXCLUDED.size, updatedAt = EXCLUDED.updatedAt;
   `;
 

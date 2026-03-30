@@ -14,10 +14,13 @@ async function runWorker() {
     queue,
     async (msg) => {
       if (!msg) return;
+      let jobId: string | null = null;
       try {
         const payload = JSON.parse(msg.content.toString());
-        const { jobId, filePath, originalName, mimetype } = payload;
+        ({ jobId } = payload);
+        const { filePath, originalName, mimetype } = payload;
 
+        if (!jobId) throw new Error('Message missing jobId');
         console.log(`Processing job ${jobId} with file ${originalName} (${mimetype})`);
         await setJobProcessing(jobId);
 
@@ -37,6 +40,9 @@ async function runWorker() {
         channel.ack(msg);
       } catch (err) {
         console.error('Failed processing message', err);
+        if (jobId) {
+          await setJobFailed(jobId, String(err));
+        }
         channel.nack(msg, false, false); // move to dead-letter if configured
       }
     },
@@ -66,9 +72,13 @@ async function startWorker() {
 
 startWorker();
 
-process.on('SIGINT', async () => {
-  console.log('Gracefully shutting down worker...');
+const shutdown = async (signal: string) => {
+  console.log(`Gracefully shutting down worker (${signal})...`);
   await closeRabbit();
   process.exit(0);
-});
+};
+
+process.on('SIGINT', () => shutdown('SIGINT'));
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+
 
