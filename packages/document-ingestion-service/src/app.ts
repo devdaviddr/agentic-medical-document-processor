@@ -18,7 +18,7 @@ app.post('/api/documents/upload', upload.single('file'), async (req, res) => {
 
   const jobId = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
-  createJob({
+  await createJob({
     jobId,
     filePath: req.file.path,
     originalName: req.file.originalname,
@@ -39,20 +39,20 @@ app.post('/api/documents/upload', upload.single('file'), async (req, res) => {
 });
 
 app.get('/api/documents/:jobId/status', async (req, res) => {
-  const job = getJobStatus(req.params.jobId);
+  const job = await getJobStatus(req.params.jobId);
   if (!job) return res.status(404).json({ error: 'Job not found' });
 
   const response = {
-    jobId: job.jobId,
+    jobId: job.jobid,
     status: job.status,
-    filePath: job.filePath,
-    originalName: job.originalName,
+    filePath: job.filepath,
+    originalName: job.originalname,
     mimetype: job.mimetype,
     size: job.size,
-    createdAt: job.createdAt,
-    updatedAt: job.updatedAt,
-    resultData: job.resultData ? JSON.parse(job.resultData) : null,
-    errorInfo: job.errorInfo || null
+    createdAt: job.createdat,
+    updatedAt: job.updatedat,
+    resultData: job.resultdata || null,
+    errorInfo: job.errorinfo || null
   };
 
   return res.json(response);

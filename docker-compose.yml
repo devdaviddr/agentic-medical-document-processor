@@ -37,16 +37,32 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
+      postgres:
+        condition: service_healthy
     environment:
       - RABBITMQ_URL=amqp://rabbitmq
+      - POSTGRES_URL=postgres://postgres:postgres@postgres:5432/jobs
       - PROCESS_SIMULATE_DELAY_MS=300
-      - SQLITE_DB_PATH=/data/jobs.db
     volumes:
       - ./data:/data
     restart: on-failure
     deploy:
       restart_policy:
         condition: on-failure
+
+  postgres:
+    image: postgres:15
+    ports:
+      - '5432:5432'
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=jobs
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
 
 networks:
   default:

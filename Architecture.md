@@ -32,13 +32,14 @@ Processing:
 | (upload PDF)      |               | (Express)             |               | document-processing  |
 +-------------------+               +-----------------------+               +----------------------+
          |                                    |                                    |
-         |                                    | 1. store job in SQLite jobs table    |
-         |                                    |    status=queued                    |
-         |                                    | 2. publish job message              |
-         |                                    |    {jobId, filePath, ...}           |
-         v                                    v                                    |
+         |                                    | 1. store job in SQLite jobs table  |
+         |                                    |    status=queued                   |
+         |                                    | 2. publish job message             |
+         |                                    |    {jobId, filePath, ...}          |
+         |                                    |                                    |
+         v                                    v                                    v
 +-------------------+               +-----------------------+                  +----------------------+
-| status poll       | <-----------> | ingestion-service     |                  | consumer(s)          |
+| status poll       | <-----------> | ingestion-service     | <------------->  | consumer(s)          |
 | /api/documents/...|               | /api/documents/:id    |                  | document-processor   |
 +-------------------+               +-----------------------+                  +----------------------+
                                                                               | 

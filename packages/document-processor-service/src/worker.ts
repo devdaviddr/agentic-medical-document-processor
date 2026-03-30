@@ -19,7 +19,7 @@ async function runWorker() {
         const { jobId, filePath, originalName, mimetype } = payload;
 
         console.log(`Processing job ${jobId} with file ${originalName} (${mimetype})`);
-        setJobProcessing(jobId);
+        await setJobProcessing(jobId);
 
         // TODO: implement actual download + OCR + Copilot SDK logic
         await new Promise((resolve) => setTimeout(resolve, PROCESSING_DELAY_MS));
@@ -32,7 +32,7 @@ async function runWorker() {
           processedAt: new Date().toISOString()
         };
 
-        setJobProcessed(jobId, result);
+        await setJobProcessed(jobId, result);
         console.log('Job result', result);
         channel.ack(msg);
       } catch (err) {
