@@ -9,10 +9,12 @@
   },
   "dependencies": {
     "amqplib": "^0.10.4",
+    "better-sqlite3": "^8.3.0",
     "dotenv": "^16.0.0"
   },
   "devDependencies": {
     "@types/amqplib": "^0.10.8",
+    "@types/better-sqlite3": "^7.4.6",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.4.5"
   }

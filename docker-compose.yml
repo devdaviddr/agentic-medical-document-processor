@@ -5,6 +5,14 @@ services:
     ports:
       - '5672:5672'
       - '15672:15672'
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
 
   document-ingestion-service:
     build:
@@ -15,8 +23,10 @@ services:
     environment:
       - PORT=4000
       - RABBITMQ_URL=amqp://rabbitmq
+      - SQLITE_DB_PATH=/data/jobs.db
     volumes:
       - ./packages/document-ingestion-service/uploads:/app/uploads
+      - ./data:/data
     depends_on:
       - rabbitmq
 
@@ -25,10 +35,18 @@ services:
       context: ./packages/document-processor-service
       dockerfile: Dockerfile
     depends_on:
-      - rabbitmq
+      rabbitmq:
+        condition: service_healthy
     environment:
       - RABBITMQ_URL=amqp://rabbitmq
       - PROCESS_SIMULATE_DELAY_MS=300
+      - SQLITE_DB_PATH=/data/jobs.db
+    volumes:
+      - ./data:/data
+    restart: on-failure
+    deploy:
+      restart_policy:
+        condition: on-failure
 
 networks:
   default:
