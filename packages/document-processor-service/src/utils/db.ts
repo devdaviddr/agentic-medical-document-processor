@@ -1,5 +1,4 @@
 import { Pool } from 'pg';
-import { DocumentProcessingResult } from './types';
 
 const connectionString = process.env.POSTGRES_URL ?? 'postgres://postgres:postgres@postgres:5432/jobs';
 const pool = new Pool({ connectionString });
@@ -43,7 +42,7 @@ export async function setJobProcessed(jobId: string, result: unknown): Promise<v
   ]);
 }
 
-export async function setJobFailed(jobId: string, error: string) {
+export async function setJobFailed(jobId: string, error: string): Promise<void> {
   const now = new Date().toISOString();
   await pool.query('UPDATE jobs SET status = $1, errorInfo = $2, updatedAt = $3 WHERE jobId = $4', [
     'failed',

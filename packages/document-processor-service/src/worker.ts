@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
-import { initRabbit, closeRabbit } from './queue';
-import { setJobProcessing, setJobProcessed, setJobFailed } from './db';
+import * as amqplib from 'amqplib';
+import { initRabbit, closeRabbit } from './utils/queue';
+import { setJobProcessing, setJobProcessed, setJobFailed } from './utils/db';
 import { extractTextFromPdf, analyzeDocumentWithAI } from './ai';
 import { DocumentJobPayload, DocumentProcessingResult } from './types';
 
@@ -23,11 +24,11 @@ async function processJob(payload: DocumentJobPayload): Promise<void> {
 }
 
 async function runWorker(): Promise<void> {
-  const { channel, queue } = await initRabbit();
+  const channel = await initRabbit();
 
   await channel.consume(
-    queue,
-    async (msg) => {
+    'document-processing',
+    async (msg: amqplib.ConsumeMessage | null) => {
       if (!msg) return;
       let jobId: string | null = null;
       try {
