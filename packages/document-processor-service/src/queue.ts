@@ -6,7 +6,7 @@ const QUEUE_NAME = 'document-processing';
 let connection: amqplib.ChannelModel | null = null;
 let channel: amqplib.Channel | null = null;
 
-export async function initRabbit() {
+export async function initRabbit(): Promise<{connection: amqplib.ChannelModel; channel: amqplib.Channel; queue: string}> {
   if (!connection) {
     connection = await amqplib.connect(RABBITMQ_URL);
   }
@@ -20,7 +20,7 @@ export async function initRabbit() {
   return { connection, channel, queue: QUEUE_NAME };
 }
 
-export async function closeRabbit() {
+export async function closeRabbit(): Promise<void> {
   if (channel) {
     await channel.close();
     channel = null;

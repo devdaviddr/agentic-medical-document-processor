@@ -1,13 +1,28 @@
 import dotenv from 'dotenv';
 import { initRabbit, closeRabbit } from './queue';
 import { setJobProcessing, setJobProcessed, setJobFailed } from './db';
+import { extractTextFromPdf, analyzeDocumentWithAI } from './ai';
+import { DocumentJobPayload, DocumentProcessingResult } from './types';
 
 dotenv.config({ path: '../../.env' });
 
-const PROCESSING_DELAY_MS = Number(process.env.PROCESS_SIMULATE_DELAY_MS ?? 300);
 const MAX_RETRIES = 12;
 
-async function runWorker() {
+async function processJob(payload: DocumentJobPayload): Promise<void> {
+  const { jobId, filePath, originalName, mimetype } = payload;
+  console.log(`Processing job ${jobId} with file ${originalName} (${mimetype})`);
+
+  await setJobProcessing(jobId);
+
+  const text = await extractTextFromPdf(filePath);
+  const aiResult: DocumentProcessingResult = await analyzeDocumentWithAI(text, jobId);
+
+  await setJobProcessed(jobId, aiResult);
+
+  console.log('Job result', aiResult);
+}
+
+async function runWorker(): Promise<void> {
   const { channel, queue } = await initRabbit();
 
   await channel.consume(
@@ -16,27 +31,12 @@ async function runWorker() {
       if (!msg) return;
       let jobId: string | null = null;
       try {
-        const payload = JSON.parse(msg.content.toString());
-        ({ jobId } = payload);
-        const { filePath, originalName, mimetype } = payload;
+        const payload = JSON.parse(msg.content.toString()) as DocumentJobPayload;
+        jobId = payload.jobId;
 
         if (!jobId) throw new Error('Message missing jobId');
-        console.log(`Processing job ${jobId} with file ${originalName} (${mimetype})`);
-        await setJobProcessing(jobId);
+        await processJob(payload);
 
-        // TODO: implement actual download + OCR + Copilot SDK logic
-        await new Promise((resolve) => setTimeout(resolve, PROCESSING_DELAY_MS));
-
-        const result = {
-          jobId,
-          status: 'processed',
-          documentType: 'unspecified',
-          extractedFields: {},
-          processedAt: new Date().toISOString()
-        };
-
-        await setJobProcessed(jobId, result);
-        console.log('Job result', result);
         channel.ack(msg);
       } catch (err) {
         console.error('Failed processing message', err);
@@ -52,7 +52,7 @@ async function runWorker() {
   console.log('Document Processor Service worker started and listening...');
 }
 
-async function startWorker() {
+async function startWorker(): Promise<void> {
   let attempt = 0;
   while (attempt < MAX_RETRIES) {
     try {

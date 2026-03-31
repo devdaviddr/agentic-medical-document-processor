@@ -6,7 +6,7 @@ const QUEUE_NAME = 'document-processing';
 let connection: amqplib.ChannelModel | null = null;
 let channel: amqplib.Channel | null = null;
 
-async function initRabbit() {
+async function initRabbit(): Promise<amqplib.Channel> {
   if (!connection) {
     connection = await amqplib.connect(RABBITMQ_URL);
   }
@@ -19,13 +19,13 @@ async function initRabbit() {
   return channel;
 }
 
-export async function enqueueDocumentJob(payload: object) {
+export async function enqueueDocumentJob(payload: object): Promise<boolean> {
   const ch = await initRabbit();
   const body = Buffer.from(JSON.stringify(payload));
   return ch.sendToQueue(QUEUE_NAME, body, { persistent: true });
 }
 
-export async function closeRabbit() {
+export async function closeRabbit(): Promise<void> {
   if (channel) await channel.close();
   if (connection) await connection.close();
 }

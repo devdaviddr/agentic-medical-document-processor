@@ -1,4 +1,5 @@
 import { Pool } from 'pg';
+import { DocumentProcessingResult } from './types';
 
 const connectionString = process.env.POSTGRES_URL ?? 'postgres://postgres:postgres@postgres:5432/jobs';
 const pool = new Pool({ connectionString });
@@ -18,7 +19,7 @@ CREATE TABLE IF NOT EXISTS jobs (
 );
 `;
 
-async function initDb() {
+async function initDb(): Promise<void> {
   await pool.query(initDDL);
 }
 
@@ -27,12 +28,12 @@ initDb().catch((err) => {
   process.exit(1);
 });
 
-export async function setJobProcessing(jobId: string) {
+export async function setJobProcessing(jobId: string): Promise<void> {
   const now = new Date().toISOString();
   await pool.query('UPDATE jobs SET status = $1, updatedAt = $2 WHERE jobId = $3', ['processing', now, jobId]);
 }
 
-export async function setJobProcessed(jobId: string, result: object) {
+export async function setJobProcessed(jobId: string, result: DocumentProcessingResult | Record<string, unknown>): Promise<void> {
   const now = new Date().toISOString();
   await pool.query('UPDATE jobs SET status = $1, resultData = $2, updatedAt = $3 WHERE jobId = $4', [
     'processed',

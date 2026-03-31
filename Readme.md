@@ -179,7 +179,21 @@ curl http://localhost:4000/health
 
 - Unit tests: `npm run test`
 - Lint: `npm run lint`
+- Format: `npm run format`
 - Type: `npm run typecheck`
+
+## 🧩 Code style and architecture
+
+- TypeScript with Airbnb style guide
+- ESLint config in `.eslintrc.json`
+- Prettier config in `.prettierrc`
+- Use `interfaces` and `readonly` for typed models
+- Maintain one responsibility per module (S in SOLID)
+- Keep services loosely coupled (O/C principle): ingestion vs processor
+- Define DTOs for queue payloads and DB rows (L in SOLID)
+- Use explicit constructor injection for dependencies (D in SOLID)
+- Avoid big if/else by extracting strategies (I in SOLID)
+- Prefer purely functional small helpers for business logic (Open/Closed)
 
 ## 🔒 Security & Compliance
 

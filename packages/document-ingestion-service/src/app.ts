@@ -4,7 +4,7 @@ import multer from 'multer';
 import dotenv from 'dotenv';
 import { v4 as uuidv4 } from 'uuid';
 import { enqueueDocumentJob } from './queue';
-import { createJob, getJobStatus, JobRecord } from './db';
+import { createJob, getJobStatus } from './db';
 
 dotenv.config({ path: '../../.env' });
 
